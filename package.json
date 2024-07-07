@@ -1,0 +1,17 @@
+{
+  "name": "midi-emulicious",
+  "module": "index.ts",
+  "type": "module",
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.5.3"
+  },
+  "dependencies": {
+    "@julusian/midi": "^3.4.0"
+  },
+  "trustedDependencies": [
+    "@julusian/midi"
+  ]
+}
