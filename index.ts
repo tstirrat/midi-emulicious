@@ -18,7 +18,9 @@ switch (LOG_LEVEL) {
 const midiIn = new midi.Input();
 midiIn.openVirtualPort("Emulicious");
 
-const emu = new Emulicious();
+const emu = new Emulicious({
+  onDisconnect: () => process.exit(1),
+});
 
 process.on("SIGINT", () => {
   emu.disconnect();

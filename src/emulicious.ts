@@ -45,24 +45,32 @@ export class Emulicious {
   constructor({
     hostname = DEFAULT_HOSTNAME,
     port = DEFAULT_PORT,
+    onDisconnect,
   }: {
     hostname?: string;
     port?: number;
+    onDisconnect?: () => void;
   } = {}) {
     this.hostname = hostname;
     this.port = port;
     this.dataSocket = this.createSocket("DATA");
     this.ackSocket = this.createSocket("ACK");
 
-    this.connect();
+    this.connect(onDisconnect);
   }
 
-  async connect() {
-    return new Promise<void>((resolve) => {
-      // data must connect first
-      this.dataSocket.connect(this.port, this.hostname, () => {
-        this.ackSocket.connect(this.port, this.hostname, resolve);
-      });
+  async connect(onDisconnect?: () => void) {
+    // data must connect first
+    await this._connect(this.dataSocket, onDisconnect);
+    await this._connect(this.ackSocket);
+  }
+
+  private async _connect(socket: Socket, onClose?: () => void) {
+    return new Promise<void>((resolve, reject) => {
+      socket.connect(this.port, this.hostname, resolve);
+
+      socket.on("error", reject);
+      onClose && socket.on("close", onClose);
     });
   }
 
@@ -121,7 +129,7 @@ export class Emulicious {
       receiveAck.resolve();
     });
 
-    await Promise.all([receiveAck.promise]);
+    await Promise.all([ack.promise, receiveAck.promise]);
   }
 
   private sendAck() {
@@ -140,8 +148,7 @@ export class Emulicious {
       console.info(`${name}: connect`, socket.localPort)
     );
 
-    socket.on("close", () => console.info(`${name}: close`, socket.localPort));
-    socket.on("end", () => console.info(`${name}: end`, socket.localPort));
+    socket.on("close", () => console.info(`${name}: close`));
 
     socket.on("data", (data) =>
       console.debug(`${name}: <----`, Array.from(data).map(toHex))
